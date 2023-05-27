@@ -1,8 +1,7 @@
 # Predictions World Cup 2018
-I used Machine Learning to make a Logistic Regression model using scikit-learn, pandas, numpy, seaborn and matplotlib to predict the results of FIFA 2018 World Cup.
-# FIFA World Cup 2018 Winner Predictions
+I used Machine Learning to make a Logistic Regression model using scikit-learn, pandas, numpy, to predict the results of FIFA 2018 World Cup.
 
-## Goal
+## Goals
 1. The goal is to use Machine Learning to predict who is going to win the FIFA World Cup 2018.
 
 2. Predict the outcome of individual matches for the entire competition.
@@ -30,7 +29,6 @@ I used results of historical matches since the beginning of the championship (19
 
 I chose Logistic Regression in my model and got an accuracy of 57% on the training set and 55% accuracy on the test set. I also used the FIFA ranking as of April 2018 dataset and a dataset containing the fixture of the group stages of the tournament.
 
-## According to this model Brazil is likely to win this World Cup.
 
 ## Areas of further Research/ Improvement
 
