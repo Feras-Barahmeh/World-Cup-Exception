@@ -107,22 +107,25 @@ class WorldCupExpectationModel:
 
         return backupPredSet
 
-    def addMissingCols(self):
+    def addMissingCols(self, df):
         """
         Add missing columns compared to the model's training dataset (The match from 1932)
         in other words we will get all team founded the countries from 1932 and not found in this word cup
-        :return:  void
+        :param: data frame object you want find missing columns
+        :return:  DataFrame
         """
 
-        missingCols = set(self.boolDataset.columns) - set(self.predictionSet.columns)
+        missingCols = set(self.boolDataset.columns) - set(df.columns)
 
-        newColumns = pd.DataFrame(0, index=self.predictionSet.index, columns=list(missingCols))
-        self.predictionSet = pd.concat([self.predictionSet, newColumns], axis=1)
+        newColumns = pd.DataFrame(0, index=df.index, columns=list(missingCols))
+        df = pd.concat([df, newColumns], axis=1)
 
-        self.predictionSet = self.predictionSet[self.boolDataset.columns]
+        df = df[self.boolDataset.columns]
 
         # Remove winning team column
-        self.predictionSet = self.predictionSet.drop(['winner_team'], axis=1)
+        df = df.drop(['winner_team'], axis=1)
+
+        return df
 
     def groupsPrediction(self, backupPredSet):
         prediction = self.logreg.predict(self.predictionSet)
@@ -156,19 +159,87 @@ class WorldCupExpectationModel:
                   '%.3f' % (self.logreg.predict_proba(self.predictionSet)[i][0]))
             print("")
 
-    def predict(self, stages):
+    def cleanBeforePredict(self, stages):
         """
-        To clean and predict all stage after group stage
+        To clean Data Before predict
         :param stages:
-        :return:
+        :return: clean prediction data frame and backup Predicted data frame
         """
-
         pos = []
 
         # Loop to retrieve each team's position according to FIFA ranking
         for stage in stages:
             pos.append(self.ranking.loc[self.ranking['Team'] == stage[0], 'Position'].iloc[0])
             pos.append(self.ranking.loc[self.ranking['Team'] == stage[1], 'Position'].iloc[0])
+
+            # Creating the DataFrame for prediction
+        pred = []
+
+        # Initializing iterators for while loop
+        i = 0
+        j = 0
+
+        # 'i' will be the iterator for the 'positions' list, and 'j' for the list of matches (list of tuples)
+        while i < len(pos):
+            dictTemp = {}
+
+            # If position of first team is better, he will be the 'home' team, and vice-versa
+            if pos[i] < pos[i + 1]:
+                dictTemp.update({'home_team': stages[j][0], 'away_team': stages[j][1]})
+            else:
+                dictTemp.update({'home_team': stages[j][1], 'away_team': stages[j][0]})
+
+            # Append updated dictionary to the list, that will later be converted into a DataFrame
+            pred.append(dictTemp)
+            i += 2
+            j += 1
+
+        # Convert list into DataFrame
+        pred = pd.DataFrame(pred)
+        backupPred = pred
+
+        return pred, backupPred
+
+    def predict(self, stages, messageSeparator):
+        """
+        To predict all stage after group stage
+        :param messageSeparator:
+        :param stages:
+        :return:
+        """
+        pred, backupPred = self.cleanBeforePredict(stages)
+
+        # Get dummy variables and drop winning_team column
+        pred = self.oneHotEncoder(pred, cols=['home_team', 'away_team'], prefix=['home_team', 'away_team'])
+
+        pred = self.addMissingCols(pred)
+
+        # Predict!
+        messageSeparator = '-' * 10 + ' ' + messageSeparator + ' ' + '-' * 10
+        print(cs(messageSeparator, "green"), end='\n\n')
+
+        predictions = self.logreg.predict(pred)
+
+        for i in range(len(pred)):
+            print(backupPred.iloc[i, 1] + " and " + backupPred.iloc[i, 0])
+            if predictions[i] == 2:
+                print(cs("Winner: ", "green") + backupPred.iloc[i, 1])
+            elif predictions[i] == 1:
+                print(cs("Winner: ", "yellow"))
+            elif predictions[i] == 0:
+                print(cs("Winner: ", "green") + backupPred.iloc[i, 0])
+
+
+            print('Probability of ' + backupPred.iloc[i, 1] + ' winning: ',
+                  '%.3f' % (self.logreg.predict_proba(pred)[i][2]))
+
+            print('Probability of Draw: ', '%.3f' % (self.logreg.predict_proba(pred)[i][1]))
+            print('Probability of ' + backupPred.iloc[i, 0] + ' winning: ',
+                  '%.3f' % (self.logreg.predict_proba(pred)[i][0]))
+            print("")
+
+
+
 
     def buildingModel(self):
         self.boolDataset = self.oneHotEncoder(self.dataset, cols=["home_team", "away_team"],
@@ -186,7 +257,7 @@ class WorldCupExpectationModel:
             self.predictionSet, cols=["home_team", "away_team"], prefix=["home_team", "away_team"]
         )
 
-        self.addMissingCols()
+        self.predictionSet = self.addMissingCols(self.predictionSet)
         self.groupsPrediction(backupPredSet)
 
         group16 = [
@@ -200,6 +271,20 @@ class WorldCupExpectationModel:
             ('Poland', 'Belgium')
         ]
 
-        self.predict(group16)
+        self.predict(group16, "Stage 16")
 
-        
+        quarters = [('Portugal', 'France'),
+                    ('Spain', 'Argentina'),
+                    ('Brazil', 'England'),
+                    ('Germany', 'Belgium')]
+
+        self.predict(quarters, "Stage quarters")
+
+        semi = [('Portugal', 'Brazil'),
+                ('Argentina', 'Germany')]
+
+        self.predict(semi, "Stage semi final")
+
+        finals = [('Brazil', 'Germany')]
+
+        self.predict(finals, "finals")
