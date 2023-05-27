@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.ticker as ticker
 import matplotlib.ticker as plticker
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
+
 from prepareDataset import *
+from WorldCupExpectationModel import *
 
 # Load Data
 # worldCup = pd.read_csv('datasets/World Cup 2018 Dataset.csv') # For Browse
@@ -18,5 +18,7 @@ prepare = prepareDataset({
 
 preparedData = prepare.prepare()
 
+model = WorldCupExpectationModel(preparedData)
 
 
+model.buildingModel()

@@ -15,12 +15,15 @@ class prepareDataset:
         """
         winners = []
         for match in range(len(self.files["results"]["home_team"])):
+            # If Home Team Win
             if self.files["results"]["home_score"][match] > self.files["results"]["away_score"][match]:
-                winners.append(self.files["results"]["home_team"][match])
+                winners.append(WinnerTeam.HomeTeamWin.value)
+
+            # If Away Team Win
             elif self.files["results"]["home_score"][match] < self.files["results"]["away_score"][match]:
-                winners.append(self.files["results"]["away_team"][match])
+                winners.append(WinnerTeam.HomeTeamLoss.value)
             else:
-                winners.append("Draw")
+                winners.append(WinnerTeam.Draw.value)
 
         self.files["results"]["winner_team"] = winners
 
@@ -77,6 +80,7 @@ class prepareDataset:
             Drop all columns not affective in model (pass misleading)
         :return: void
         """
+
         self.teams = self.teams.drop(
             [
                 "date",
