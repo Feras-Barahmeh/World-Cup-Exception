@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from Enums import WinnerTeam
 from stringcolor import *
+import matplotlib.pyplot as plt
 class WorldCupExpectationModel:
     def __init__(self, dataset):
         self.logreg = None
@@ -57,12 +58,28 @@ class WorldCupExpectationModel:
 
     def setFixtures(self):
         self.fixtures = pd.read_csv("datasets/fixtures.csv")
+    def plottingTheAccuracyScores(self):
+        accuracy_scores = [self.accuracyTraining, self.accuracyTesting]
+        labels = ['Training Accuracy', 'Testing Accuracy']
+
+        plt.bar(labels, accuracy_scores)
+        plt.ylim(0, 1)  # Setting the y-axis limits
+        plt.ylabel('Accuracy')
+        plt.title('Accuracy Scores')
+
+        # Displaying accuracy scores on the bars
+        for i in range(len(accuracy_scores)):
+            plt.text(i, accuracy_scores[i], f'{accuracy_scores[i]:.2f}', ha='center', va='bottom')
+
+        plt.show()
     def LR(self):
         self.logreg = LogisticRegression(max_iter=1000)
         self.logreg.fit(self.XTrainingData, self.YTrainingData)
 
         self.accuracyTraining = self.logreg.score(self.XTrainingData, self.YTrainingData)
         self.accuracyTesting = self.logreg.score(self.XTestData, self.YTestData)
+
+        self.plottingTheAccuracyScores()
     def setRankForEachTeam(self):
         """
             Create Column with Fifa ranking position of each team
